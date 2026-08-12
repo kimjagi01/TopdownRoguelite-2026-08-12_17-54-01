@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -7,6 +8,12 @@ public class LevelUpManager : MonoBehaviour
 {
     private static LevelUpManager instance;
 
+    [Header("Upgrade Data")]
+    [SerializeField] private UpgradeData[] upgrades;
+
+    [Header("Level Up Settings")]
+    [SerializeField] private int numberOfChoices = 3;
+
     private PlayerExperience playerExperience;
     private PlayerController playerController;
     private PlayerHealth playerHealth;
@@ -14,9 +21,9 @@ public class LevelUpManager : MonoBehaviour
     private Canvas canvas;
     private GameObject panel;
     private Text titleText;
-    private Button moveSpeedButton;
-    private Button attackButton;
-    private Button healthButton;
+
+    private Button[] upgradeButtons;
+    private Text[] upgradeButtonTexts;
 
     private bool isShowing;
 
@@ -42,8 +49,15 @@ public class LevelUpManager : MonoBehaviour
         }
 
         instance = this;
+
         DontDestroyOnLoad(gameObject);
+
         EnsureEventSystem();
+
+        upgrades = Resources.LoadAll<UpgradeData>("Upgrades");
+
+        Debug.Log($"Loaded UpgradeData: {upgrades.Length}");
+
         CreateUI();
     }
 
@@ -71,6 +85,7 @@ public class LevelUpManager : MonoBehaviour
     private void BindPlayer()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
+
         if (player == null)
         {
             return;
@@ -80,7 +95,9 @@ public class LevelUpManager : MonoBehaviour
         PlayerController newController = player.GetComponent<PlayerController>();
         PlayerHealth newHealth = player.GetComponent<PlayerHealth>();
 
-        if (newExperience == null || newController == null || newHealth == null)
+        if (newExperience == null ||
+            newController == null ||
+            newHealth == null)
         {
             return;
         }
@@ -98,6 +115,7 @@ public class LevelUpManager : MonoBehaviour
         playerExperience = newExperience;
         playerController = newController;
         playerHealth = newHealth;
+
         playerExperience.LeveledUp += HandleLeveledUp;
     }
 
@@ -114,6 +132,7 @@ public class LevelUpManager : MonoBehaviour
         }
 
         isShowing = true;
+
         Time.timeScale = 0f;
 
         if (playerController != null)
@@ -121,14 +140,19 @@ public class LevelUpManager : MonoBehaviour
             playerController.SetInputEnabled(false);
         }
 
-        panel.SetActive(true);
         titleText.text = $"Level {level} reached";
+
+        GenerateRandomChoices();
+
+        panel.SetActive(true);
     }
 
     private void HideLevelUpUI()
     {
         panel.SetActive(false);
+
         Time.timeScale = 1f;
+
         isShowing = false;
 
         if (playerController != null)
@@ -137,123 +161,407 @@ public class LevelUpManager : MonoBehaviour
         }
     }
 
-    private void ApplyUpgrade(Action action)
+    private void GenerateRandomChoices()
     {
-        if (action == null)
+        if (upgrades == null || upgrades.Length == 0)
+        {
+            Debug.LogWarning("No UpgradeData assigned to LevelUpManager.");
+
+            for (int i = 0; i < upgradeButtons.Length; i++)
+            {
+                upgradeButtons[i].gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
+        List<UpgradeData> availableUpgrades = new List<UpgradeData>(upgrades);
+
+        int choiceCount = Mathf.Min(
+            numberOfChoices,
+            upgradeButtons.Length,
+            availableUpgrades.Count
+        );
+
+        for (int i = 0; i < upgradeButtons.Length; i++)
+        {
+            if (i >= choiceCount)
+            {
+                upgradeButtons[i].gameObject.SetActive(false);
+                continue;
+            }
+
+            int randomIndex = UnityEngine.Random.Range(
+                0,
+                availableUpgrades.Count
+            );
+
+            UpgradeData selectedUpgrade =
+                availableUpgrades[randomIndex];
+
+            availableUpgrades.RemoveAt(randomIndex);
+
+            SetUpgradeButton(
+                i,
+                selectedUpgrade
+            );
+        }
+    }
+
+    private void SetUpgradeButton(
+        int index,
+        UpgradeData upgrade
+    )
+    {
+        upgradeButtons[index].gameObject.SetActive(true);
+
+        string buttonText =
+            $"{upgrade.UpgradeName}\n{upgrade.Description}";
+
+        upgradeButtonTexts[index].text = buttonText;
+
+        upgradeButtons[index].onClick.RemoveAllListeners();
+
+        upgradeButtons[index].onClick.AddListener(() =>
+        {
+            ApplyUpgrade(upgrade);
+        });
+    }
+
+    private void ApplyUpgrade(UpgradeData upgrade)
+    {
+        if (upgrade == null)
         {
             return;
         }
 
-        action.Invoke();
+        switch (upgrade.UpgradeType)
+        {
+            case UpgradeType.MoveSpeed:
+
+                if (playerController != null)
+                {
+                    playerController.IncreaseMoveSpeed(
+                        upgrade.Value
+                    );
+                }
+
+                break;
+
+            case UpgradeType.AttackDamage:
+
+                if (playerController != null)
+                {
+                    playerController.IncreaseAttackDamage(
+                        Mathf.RoundToInt(upgrade.Value)
+                    );
+                }
+
+                break;
+
+            case UpgradeType.MaxHealth:
+
+                if (playerHealth != null)
+                {
+                    playerHealth.IncreaseMaxHealth(
+                        Mathf.RoundToInt(upgrade.Value)
+                    );
+                }
+
+                break;
+
+            case UpgradeType.NewWeapon:
+
+                Debug.Log(
+                    $"New weapon upgrade selected: {upgrade.UpgradeName}"
+                );
+
+                // 추후 WeaponInventory에 연결
+
+                break;
+
+            case UpgradeType.WeaponUpgrade:
+
+                Debug.Log(
+                    $"Weapon upgrade selected: {upgrade.UpgradeName}"
+                );
+
+                // 추후 WeaponSystem에 연결
+
+                break;
+
+            case UpgradeType.NewPart:
+
+                Debug.Log(
+                    $"New part upgrade selected: {upgrade.UpgradeName}"
+                );
+
+                // 추후 InventorySystem에 연결
+
+                break;
+
+            case UpgradeType.PartUpgrade:
+
+                Debug.Log(
+                    $"Part upgrade selected: {upgrade.UpgradeName}"
+                );
+
+                // 추후 InventorySystem에 연결
+
+                break;
+
+            default:
+
+                Debug.LogWarning(
+                    $"Unknown upgrade type: {upgrade.UpgradeType}"
+                );
+
+                break;
+        }
+
         HideLevelUpUI();
     }
 
     private void CreateUI()
     {
-        GameObject canvasObject = new GameObject("LevelUpCanvas");
-        canvasObject.transform.SetParent(transform, false);
+        GameObject canvasObject =
+            new GameObject("LevelUpCanvas");
 
-        canvas = canvasObject.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        canvasObject.transform.SetParent(
+            transform,
+            false
+        );
+
+        canvas =
+            canvasObject.AddComponent<Canvas>();
+
+        canvas.renderMode =
+            RenderMode.ScreenSpaceOverlay;
+
+        CanvasScaler scaler =
+            canvasObject.AddComponent<CanvasScaler>();
+
+        scaler.uiScaleMode =
+            CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
         canvasObject.AddComponent<GraphicRaycaster>();
 
         panel = CreatePanel(canvas.transform);
-        titleText = CreateText(panel.transform, "Choose one upgrade", 34, new Vector2(0f, 120f), new Vector2(560f, 60f));
 
-        moveSpeedButton = CreateButton(panel.transform, "Move Speed + 1", new Vector2(0f, 40f), () =>
-        {
-            if (playerController != null)
-            {
-                playerController.IncreaseMoveSpeed(1f);
-            }
-        });
+        titleText = CreateText(
+            panel.transform,
+            "Choose one upgrade",
+            34,
+            new Vector2(0f, 120f),
+            new Vector2(560f, 60f)
+        );
 
-        attackButton = CreateButton(panel.transform, "Attack Damage + 1", new Vector2(0f, -40f), () =>
-        {
-            if (playerController != null)
-            {
-                playerController.IncreaseAttackDamage(1);
-            }
-        });
+        upgradeButtons =
+            new Button[numberOfChoices];
 
-        healthButton = CreateButton(panel.transform, "Max HP + 1", new Vector2(0f, -120f), () =>
+        upgradeButtonTexts =
+            new Text[numberOfChoices];
+
+        for (int i = 0; i < numberOfChoices; i++)
         {
-            if (playerHealth != null)
-            {
-                playerHealth.IncreaseMaxHealth(1);
-            }
-        });
+            float yPosition =
+                40f - (i * 80f);
+
+            Button button =
+                CreateButton(
+                    panel.transform,
+                    $"Upgrade {i + 1}",
+                    new Vector2(0f, yPosition),
+                    null
+                );
+
+            upgradeButtons[i] = button;
+
+            Text buttonText =
+                button.GetComponentInChildren<Text>();
+
+            upgradeButtonTexts[i] =
+                buttonText;
+        }
 
         panel.SetActive(false);
     }
 
-    private GameObject CreatePanel(Transform parent)
+    private GameObject CreatePanel(
+        Transform parent
+    )
     {
-        GameObject panelObject = new GameObject("LevelUpPanel");
-        panelObject.transform.SetParent(parent, false);
+        GameObject panelObject =
+            new GameObject("LevelUpPanel");
 
-        Image image = panelObject.AddComponent<Image>();
-        image.color = new Color(0f, 0f, 0f, 0.72f);
+        panelObject.transform.SetParent(
+            parent,
+            false
+        );
 
-        RectTransform rectTransform = panelObject.GetComponent<RectTransform>();
-        rectTransform.anchorMin = Vector2.zero;
-        rectTransform.anchorMax = Vector2.one;
-        rectTransform.offsetMin = Vector2.zero;
-        rectTransform.offsetMax = Vector2.zero;
+        Image image =
+            panelObject.AddComponent<Image>();
+
+        image.color =
+            new Color(
+                0f,
+                0f,
+                0f,
+                0.72f
+            );
+
+        RectTransform rectTransform =
+            panelObject.GetComponent<RectTransform>();
+
+        rectTransform.anchorMin =
+            Vector2.zero;
+
+        rectTransform.anchorMax =
+            Vector2.one;
+
+        rectTransform.offsetMin =
+            Vector2.zero;
+
+        rectTransform.offsetMax =
+            Vector2.zero;
 
         return panelObject;
     }
 
-    private Text CreateText(Transform parent, string content, int fontSize, Vector2 anchoredPosition, Vector2 size)
+    private Text CreateText(
+        Transform parent,
+        string content,
+        int fontSize,
+        Vector2 anchoredPosition,
+        Vector2 size
+    )
     {
-        GameObject textObject = new GameObject("LevelUpText");
-        textObject.transform.SetParent(parent, false);
+        GameObject textObject =
+            new GameObject("LevelUpText");
 
-        Text text = textObject.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        textObject.transform.SetParent(
+            parent,
+            false
+        );
+
+        Text text =
+            textObject.AddComponent<Text>();
+
+        text.font =
+            Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf"
+            );
+
         text.text = content;
-        text.fontSize = fontSize;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.color = Color.white;
 
-        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = size;
-        rectTransform.anchoredPosition = anchoredPosition;
+        text.fontSize = fontSize;
+
+        text.alignment =
+            TextAnchor.MiddleCenter;
+
+        text.color =
+            Color.white;
+
+        RectTransform rectTransform =
+            textObject.GetComponent<RectTransform>();
+
+        rectTransform.sizeDelta =
+            size;
+
+        rectTransform.anchoredPosition =
+            anchoredPosition;
 
         return text;
     }
 
-    private Button CreateButton(Transform parent, string label, Vector2 anchoredPosition, Action onClick)
+    private Button CreateButton(
+        Transform parent,
+        string label,
+        Vector2 anchoredPosition,
+        Action onClick
+    )
     {
-        GameObject buttonObject = new GameObject(label);
-        buttonObject.transform.SetParent(parent, false);
+        GameObject buttonObject =
+            new GameObject(label);
 
-        Image image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.18f, 0.18f, 0.18f, 0.95f);
+        buttonObject.transform.SetParent(
+            parent,
+            false
+        );
 
-        Button button = buttonObject.AddComponent<Button>();
-        button.onClick.AddListener(() => ApplyUpgrade(onClick));
+        Image image =
+            buttonObject.AddComponent<Image>();
 
-        RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(320f, 46f);
-        rectTransform.anchoredPosition = anchoredPosition;
+        image.color =
+            new Color(
+                0.18f,
+                0.18f,
+                0.18f,
+                0.95f
+            );
 
-        GameObject labelObject = new GameObject("Text");
-        labelObject.transform.SetParent(buttonObject.transform, false);
+        Button button =
+            buttonObject.AddComponent<Button>();
 
-        Text text = labelObject.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        if (onClick != null)
+        {
+            button.onClick.AddListener(
+                () => onClick()
+            );
+        }
+
+        RectTransform rectTransform =
+            buttonObject.GetComponent<RectTransform>();
+
+        rectTransform.sizeDelta =
+            new Vector2(
+                320f,
+                60f
+            );
+
+        rectTransform.anchoredPosition =
+            anchoredPosition;
+
+        GameObject labelObject =
+            new GameObject("Text");
+
+        labelObject.transform.SetParent(
+            buttonObject.transform,
+            false
+        );
+
+        Text text =
+            labelObject.AddComponent<Text>();
+
+        text.font =
+            Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf"
+            );
+
         text.text = label;
-        text.fontSize = 24;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.color = Color.white;
 
-        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        labelRect.offsetMin = Vector2.zero;
-        labelRect.offsetMax = Vector2.zero;
+        text.fontSize = 22;
+
+        text.alignment =
+            TextAnchor.MiddleCenter;
+
+        text.color =
+            Color.white;
+
+        RectTransform labelRect =
+            labelObject.GetComponent<RectTransform>();
+
+        labelRect.anchorMin =
+            Vector2.zero;
+
+        labelRect.anchorMax =
+            Vector2.one;
+
+        labelRect.offsetMin =
+            Vector2.zero;
+
+        labelRect.offsetMax =
+            Vector2.zero;
 
         return button;
     }
@@ -265,9 +573,15 @@ public class LevelUpManager : MonoBehaviour
             return;
         }
 
-        GameObject eventSystemObject = new GameObject("EventSystem");
+        GameObject eventSystemObject =
+            new GameObject("EventSystem");
+
         eventSystemObject.AddComponent<EventSystem>();
+
         eventSystemObject.AddComponent<StandaloneInputModule>();
-        DontDestroyOnLoad(eventSystemObject);
+
+        DontDestroyOnLoad(
+            eventSystemObject
+        );
     }
 }

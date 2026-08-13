@@ -12,25 +12,17 @@ public class WeaponData : ScriptableObject
     [Header("Weapon Stats")]
     [SerializeField] private int attackDamage = 10;
 
-    // 0 ~ 100 사이의 무기 공격속도 능력치
-    [SerializeField][Range(0f, 100f)] private float attackSpeed = 50f;
+    [SerializeField]
+    [Range(0f, 100f)]
+    private float attackSpeed = 50f;
 
-    // 0 ~ 100 사이의 무기 사거리 능력치
-    [SerializeField][Range(0f, 100f)] private float attackRange = 50f;
+    [SerializeField]
+    [Range(0f, 100f)]
+    private float attackRange = 50f;
 
     [Header("Part Slots")]
     [SerializeField]
-    private string[] partSlots = new string[8]
-    {
-        "Handle",
-        "Guard",
-        "Blade_Left_Top",
-        "Blade_Left_Middle",
-        "Blade_Left_Bottom",
-        "Blade_Right_Top",
-        "Blade_Right_Middle",
-        "Blade_Right_Bottom"
-    };
+    private WeaponPartSlot[] partSlots = new WeaponPartSlot[8];
 
     public string WeaponName => weaponName;
     public string Description => description;
@@ -41,5 +33,28 @@ public class WeaponData : ScriptableObject
     public float AttackSpeed => attackSpeed;
     public float AttackRange => attackRange;
 
-    public string[] PartSlots => partSlots;
+    public WeaponPartSlot[] PartSlots => partSlots;
+
+    public WeaponPartSlot GetPartSlot(string slotId)
+    {
+        if (string.IsNullOrEmpty(slotId))
+        {
+            return null;
+        }
+
+        foreach (WeaponPartSlot slot in partSlots)
+        {
+            if (slot == null)
+            {
+                continue;
+            }
+
+            if (slot.SlotId == slotId)
+            {
+                return slot;
+            }
+        }
+
+        return null;
+    }
 }

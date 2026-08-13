@@ -1,15 +1,5 @@
 using UnityEngine;
 
-public enum WeaponType
-{
-    Sword,
-    Spear,
-    GreatSword,
-    ShieldSword,
-    Gun,
-    Staff
-}
-
 [CreateAssetMenu(fileName = "NewWeapon", menuName = "Game/Weapon Data")]
 public class WeaponData : ScriptableObject
 {

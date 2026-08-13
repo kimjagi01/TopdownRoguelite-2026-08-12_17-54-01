@@ -37,6 +37,7 @@ public class LevelUpManager : MonoBehaviour
 
         GameObject managerObject = new GameObject(nameof(LevelUpManager));
         instance = managerObject.AddComponent<LevelUpManager>();
+
         DontDestroyOnLoad(managerObject);
     }
 
@@ -91,9 +92,14 @@ public class LevelUpManager : MonoBehaviour
             return;
         }
 
-        PlayerExperience newExperience = player.GetComponent<PlayerExperience>();
-        PlayerController newController = player.GetComponent<PlayerController>();
-        PlayerHealth newHealth = player.GetComponent<PlayerHealth>();
+        PlayerExperience newExperience =
+            player.GetComponent<PlayerExperience>();
+
+        PlayerController newController =
+            player.GetComponent<PlayerController>();
+
+        PlayerHealth newHealth =
+            player.GetComponent<PlayerHealth>();
 
         if (newExperience == null ||
             newController == null ||
@@ -165,7 +171,9 @@ public class LevelUpManager : MonoBehaviour
     {
         if (upgrades == null || upgrades.Length == 0)
         {
-            Debug.LogWarning("No UpgradeData assigned to LevelUpManager.");
+            Debug.LogWarning(
+                "No UpgradeData found in Resources/Upgrades."
+            );
 
             for (int i = 0; i < upgradeButtons.Length; i++)
             {
@@ -175,7 +183,8 @@ public class LevelUpManager : MonoBehaviour
             return;
         }
 
-        List<UpgradeData> availableUpgrades = new List<UpgradeData>(upgrades);
+        List<UpgradeData> availableUpgrades =
+            new List<UpgradeData>(upgrades);
 
         int choiceCount = Mathf.Min(
             numberOfChoices,
@@ -191,32 +200,49 @@ public class LevelUpManager : MonoBehaviour
                 continue;
             }
 
-            int randomIndex = UnityEngine.Random.Range(
-                0,
-                availableUpgrades.Count
+            UpgradeData selectedUpgrade =
+                GetRandomWeightedUpgrade(
+                    availableUpgrades
+                 );
+
+            if (selectedUpgrade == null)
+            {
+                continue;
+            }
+
+            availableUpgrades.Remove(
+                selectedUpgrade
             );
 
-            UpgradeData selectedUpgrade =
-                availableUpgrades[randomIndex];
-
-            availableUpgrades.RemoveAt(randomIndex);
+            float rolledValue =
+                selectedUpgrade.RollValue();
 
             SetUpgradeButton(
                 i,
-                selectedUpgrade
+                selectedUpgrade,
+                rolledValue
             );
         }
     }
 
     private void SetUpgradeButton(
         int index,
-        UpgradeData upgrade
+        UpgradeData upgrade,
+        float rolledValue
     )
     {
         upgradeButtons[index].gameObject.SetActive(true);
 
+        string valueText =
+            FormatUpgradeValue(
+                upgrade.UpgradeType,
+                rolledValue
+            );
+
         string buttonText =
-            $"{upgrade.UpgradeName}\n{upgrade.Description}";
+            $"{upgrade.UpgradeName}\n" +
+            $"{upgrade.Description}\n" +
+            $"{valueText}";
 
         upgradeButtonTexts[index].text = buttonText;
 
@@ -224,16 +250,44 @@ public class LevelUpManager : MonoBehaviour
 
         upgradeButtons[index].onClick.AddListener(() =>
         {
-            ApplyUpgrade(upgrade);
+            ApplyUpgrade(
+                upgrade,
+                rolledValue
+            );
         });
     }
 
-    private void ApplyUpgrade(UpgradeData upgrade)
+    private string FormatUpgradeValue(
+        UpgradeType upgradeType,
+        float value
+    )
+    {
+        switch (upgradeType)
+        {
+            case UpgradeType.MoveSpeed:
+            case UpgradeType.AttackDamage:
+            case UpgradeType.MaxHealth:
+                return $"+{value:0.##}";
+
+            default:
+                return $"Value: {value:0.##}";
+        }
+    }
+
+    private void ApplyUpgrade(
+        UpgradeData upgrade,
+        float rolledValue
+    )
     {
         if (upgrade == null)
         {
             return;
         }
+
+        Debug.Log(
+            $"Upgrade selected: {upgrade.UpgradeName} " +
+            $"(+{rolledValue:0.##})"
+        );
 
         switch (upgrade.UpgradeType)
         {
@@ -242,7 +296,7 @@ public class LevelUpManager : MonoBehaviour
                 if (playerController != null)
                 {
                     playerController.IncreaseMoveSpeed(
-                        upgrade.Value
+                        rolledValue
                     );
                 }
 
@@ -253,7 +307,7 @@ public class LevelUpManager : MonoBehaviour
                 if (playerController != null)
                 {
                     playerController.IncreaseAttackDamage(
-                        Mathf.RoundToInt(upgrade.Value)
+                        Mathf.RoundToInt(rolledValue)
                     );
                 }
 
@@ -264,7 +318,7 @@ public class LevelUpManager : MonoBehaviour
                 if (playerHealth != null)
                 {
                     playerHealth.IncreaseMaxHealth(
-                        Mathf.RoundToInt(upgrade.Value)
+                        Mathf.RoundToInt(rolledValue)
                     );
                 }
 
@@ -273,47 +327,44 @@ public class LevelUpManager : MonoBehaviour
             case UpgradeType.NewWeapon:
 
                 Debug.Log(
-                    $"New weapon upgrade selected: {upgrade.UpgradeName}"
+                    $"New weapon upgrade selected: " +
+                    $"{upgrade.UpgradeName}"
                 );
-
-                // 추후 WeaponInventory에 연결
 
                 break;
 
             case UpgradeType.WeaponUpgrade:
 
                 Debug.Log(
-                    $"Weapon upgrade selected: {upgrade.UpgradeName}"
+                    $"Weapon upgrade selected: " +
+                    $"{upgrade.UpgradeName}"
                 );
-
-                // 추후 WeaponSystem에 연결
 
                 break;
 
             case UpgradeType.NewPart:
 
                 Debug.Log(
-                    $"New part upgrade selected: {upgrade.UpgradeName}"
+                    $"New part upgrade selected: " +
+                    $"{upgrade.UpgradeName}"
                 );
-
-                // 추후 InventorySystem에 연결
 
                 break;
 
             case UpgradeType.PartUpgrade:
 
                 Debug.Log(
-                    $"Part upgrade selected: {upgrade.UpgradeName}"
+                    $"Part upgrade selected: " +
+                    $"{upgrade.UpgradeName}"
                 );
-
-                // 추후 InventorySystem에 연결
 
                 break;
 
             default:
 
                 Debug.LogWarning(
-                    $"Unknown upgrade type: {upgrade.UpgradeType}"
+                    $"Unknown upgrade type: " +
+                    $"{upgrade.UpgradeType}"
                 );
 
                 break;
@@ -346,15 +397,17 @@ public class LevelUpManager : MonoBehaviour
 
         canvasObject.AddComponent<GraphicRaycaster>();
 
-        panel = CreatePanel(canvas.transform);
+        panel =
+            CreatePanel(canvas.transform);
 
-        titleText = CreateText(
-            panel.transform,
-            "Choose one upgrade",
-            34,
-            new Vector2(0f, 120f),
-            new Vector2(560f, 60f)
-        );
+        titleText =
+            CreateText(
+                panel.transform,
+                "Choose one upgrade",
+                34,
+                new Vector2(0f, 150f),
+                new Vector2(560f, 60f)
+            );
 
         upgradeButtons =
             new Button[numberOfChoices];
@@ -365,7 +418,7 @@ public class LevelUpManager : MonoBehaviour
         for (int i = 0; i < numberOfChoices; i++)
         {
             float yPosition =
-                40f - (i * 80f);
+                40f - (i * 90f);
 
             Button button =
                 CreateButton(
@@ -452,9 +505,11 @@ public class LevelUpManager : MonoBehaviour
                 "LegacyRuntime.ttf"
             );
 
-        text.text = content;
+        text.text =
+            content;
 
-        text.fontSize = fontSize;
+        text.fontSize =
+            fontSize;
 
         text.alignment =
             TextAnchor.MiddleCenter;
@@ -515,8 +570,8 @@ public class LevelUpManager : MonoBehaviour
 
         rectTransform.sizeDelta =
             new Vector2(
-                320f,
-                60f
+                360f,
+                70f
             );
 
         rectTransform.anchoredPosition =
@@ -538,9 +593,11 @@ public class LevelUpManager : MonoBehaviour
                 "LegacyRuntime.ttf"
             );
 
-        text.text = label;
+        text.text =
+            label;
 
-        text.fontSize = 22;
+        text.fontSize =
+            20;
 
         text.alignment =
             TextAnchor.MiddleCenter;
@@ -583,5 +640,63 @@ public class LevelUpManager : MonoBehaviour
         DontDestroyOnLoad(
             eventSystemObject
         );
+    }
+    private UpgradeData GetRandomWeightedUpgrade(
+    List<UpgradeData> availableUpgrades)
+    {
+        if (availableUpgrades == null ||
+            availableUpgrades.Count == 0)
+        {
+            return null;
+        }
+
+        float totalWeight = 0f;
+
+        foreach (UpgradeData upgrade in availableUpgrades)
+        {
+            if (upgrade == null)
+            {
+                continue;
+            }
+
+            totalWeight += Mathf.Max(0f, upgrade.Weight);
+        }
+
+        if (totalWeight <= 0f)
+        {
+            return availableUpgrades[
+                UnityEngine.Random.Range(
+                    0,
+                    availableUpgrades.Count
+                )
+            ];
+        }
+
+        float randomValue =
+            UnityEngine.Random.Range(0f, totalWeight);
+
+        float currentWeight = 0f;
+
+        foreach (UpgradeData upgrade in availableUpgrades)
+        {
+            if (upgrade == null)
+            {
+                continue;
+            }
+
+            currentWeight += Mathf.Max(
+                0f,
+                upgrade.Weight
+            );
+
+            if (randomValue <= currentWeight)
+            {
+                return upgrade;
+            }
+        }
+
+        return availableUpgrades[
+            availableUpgrades.Count - 1
+        ];
     }
 }

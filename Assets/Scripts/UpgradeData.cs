@@ -6,7 +6,6 @@ public enum UpgradeType
     AttackDamage,
     MaxHealth,
 
-    // 추후 확장
     NewWeapon,
     WeaponUpgrade,
     NewPart,
@@ -27,11 +26,26 @@ public class UpgradeData : ScriptableObject
 
     [SerializeField] private UpgradeType upgradeType;
 
-    [Header("Value")]
-    [SerializeField] private float value = 1f;
-
+    [Header("Random Value")]
+    [SerializeField] private float minValue = 1f;
+    [SerializeField] private float maxValue = 1f;
+    [SerializeField] private UpgradeRarity rarity = UpgradeRarity.Common;
+    [SerializeField] private float weight = 60f;
     public string UpgradeName => upgradeName;
     public string Description => description;
     public UpgradeType UpgradeType => upgradeType;
-    public float Value => value;
+
+    public float MinValue => minValue;
+    public float MaxValue => maxValue;
+    public UpgradeRarity Rarity => rarity;
+    public float Weight => weight;
+    public float RollValue()
+    {
+        if (maxValue < minValue)
+        {
+            return minValue;
+        }
+
+        return Random.Range(minValue, maxValue);
+    }
 }

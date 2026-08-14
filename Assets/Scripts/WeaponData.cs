@@ -20,10 +20,13 @@ public class WeaponData : ScriptableObject
     [Range(0f, 100f)]
     private float attackRange = 50f;
 
+    [Header("Weapon Prefab")]
+    [SerializeField] private GameObject weaponPrefab;
+
     [Header("Part Slots")]
     [SerializeField]
     private WeaponPartSlot[] partSlots = new WeaponPartSlot[8];
-
+    public GameObject WeaponPrefab => weaponPrefab;
     public string WeaponName => weaponName;
     public string Description => description;
     public Sprite Icon => icon;

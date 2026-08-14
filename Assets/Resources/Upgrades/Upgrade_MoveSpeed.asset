@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbe5de07a83ec624aae799654fd1782c, type: 3}
   m_Name: Upgrade_MoveSpeed
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeData
-  upgradeName: "\uC774\uB3D9\uC18D\uB3C4 \uC99D\uAC00"
-  description: "\uC774\uB3D9\uC18D\uB3C4\uAC00 1 \uC99D\uAC00\uD569\uB2C8\uB2E4.\n"
+  upgradeName: "\uAE30\uB3D9\uB825 \uAC15\uD654"
+  description: "\uC774\uB3D9 \uC18D\uB3C4\uB97C \uAC15\uD654\uD569\uB2C8\uB2E4."
   upgradeType: 0
-  value: 1
+  minValue: 0.5
+  maxValue: 1.5
+  rarity: 0
+  weight: 60

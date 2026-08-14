@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbe5de07a83ec624aae799654fd1782c, type: 3}
   m_Name: Upgrade_MaxHealth
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeData
-  upgradeName: "\uCD5C\uB300 \uCCB4\uB825 \uC99D\uAC00"
-  description: "\uCD5C\uB300 \uCCB4\uB825\uC774 1 \uC99D\uAC00\uD569\uB2C8\uB2E4.\n"
+  upgradeName: "\uCC44\uB825 \uAC15\uD654"
+  description: "\uCD5C\uB300 \uCCB4\uB825\uC744 \uAC15\uD654\uD569\uB2C8\uB2E4."
   upgradeType: 2
-  value: 1
+  minValue: 1
+  maxValue: 3
+  rarity: 0
+  weight: 60

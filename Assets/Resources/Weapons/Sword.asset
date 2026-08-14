@@ -19,12 +19,13 @@ MonoBehaviour:
   attackDamage: 80
   attackSpeed: 50
   attackRange: 50
+  weaponPrefab: {fileID: 0}
   partSlots:
-  - Handle
-  - Guard
-  - Blade_Left_Top
-  - Blade_Left_Middle
-  - Blade_Left_Bottom
-  - Blade_Right_Top
-  - Blade_Right_Middle
-  - Blade_Right_Bottom
+  - slotId: Sword_1
+  - slotId: Sword_2
+  - slotId: Sword_3
+  - slotId: Sword_4
+  - slotId: Sword_5
+  - slotId: Sword_6
+  - slotId: Sword_7
+  - slotId: Sword_8

@@ -9,6 +9,11 @@ public class PartItemUI : MonoBehaviour,
     [SerializeField] private PartData partData;
 
     public PartData PartData => partData;
+
+    public void SetPartData(PartData data)
+    {
+        partData = data;
+    }
     private CanvasGroup canvasGroup;
     private RectTransform rectTransform;
 

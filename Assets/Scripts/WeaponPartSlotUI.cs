@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class WeaponPartSlotUI : MonoBehaviour, IDropHandler
 {
@@ -9,16 +10,85 @@ public class WeaponPartSlotUI : MonoBehaviour, IDropHandler
     [Header("Weapon Manager")]
     [SerializeField] private WeaponManager weaponManager;
 
+    [Header("UI")]
+    [SerializeField] private Image partIcon;
+
 
     public string SlotId => slotId;
+
+
+    private void Start()
+    {
+        Refresh();
+    }
+
+
+    public void Refresh()
+    {
+        // WeaponManager가 없으면 아이콘 숨김
+        if (weaponManager == null)
+        {
+            Debug.LogWarning(
+                $"WeaponPartSlotUI: WeaponManager is not assigned. ({slotId})"
+            );
+
+            if (partIcon != null)
+            {
+                partIcon.enabled = false;
+            }
+
+            return;
+        }
+
+
+        // 현재 장착된 무기 가져오기
+        WeaponInstance currentWeapon = weaponManager.CurrentWeapon;
+
+        if (currentWeapon == null)
+        {
+            if (partIcon != null)
+            {
+                partIcon.enabled = false;
+            }
+
+            return;
+        }
+
+
+        // 현재 슬롯에 장착된 파츠 가져오기
+        PartData equippedPart =
+            currentWeapon.GetEquippedPart(slotId);
+
+
+        // 장착된 파츠가 없음
+        if (equippedPart == null)
+        {
+            if (partIcon != null)
+            {
+                partIcon.enabled = false;
+            }
+
+            return;
+        }
+
+
+        // 장착된 파츠 아이콘 표시
+        if (partIcon != null)
+        {
+            partIcon.sprite = equippedPart.Icon;
+            partIcon.enabled = equippedPart.Icon != null;
+        }
+    }
 
 
     public void OnDrop(PointerEventData eventData)
     {
         Debug.Log($"④ {slotId} - OnDrop");
 
+
         // 드래그한 오브젝트에서 PartItemUI 찾기
-        PartItemUI part = eventData.pointerDrag?.GetComponent<PartItemUI>();
+        PartItemUI part =
+            eventData.pointerDrag?.GetComponent<PartItemUI>();
 
         if (part == null)
         {
@@ -29,7 +99,10 @@ public class WeaponPartSlotUI : MonoBehaviour, IDropHandler
             return;
         }
 
-        Debug.Log("⑤ PartTest detected!");
+
+        Debug.Log(
+            $"⑤ {part.PartData.PartName} detected!"
+        );
 
 
         // PartData 가져오기
@@ -57,7 +130,8 @@ public class WeaponPartSlotUI : MonoBehaviour, IDropHandler
 
 
         // 현재 장착된 무기 가져오기
-        WeaponInstance currentWeapon = weaponManager.CurrentWeapon;
+        WeaponInstance currentWeapon =
+            weaponManager.CurrentWeapon;
 
         if (currentWeapon == null)
         {
@@ -83,6 +157,9 @@ public class WeaponPartSlotUI : MonoBehaviour, IDropHandler
                 $"{partData.PartName} → " +
                 $"{currentWeapon.Data.WeaponName} / {slotId}"
             );
+
+            // 데이터가 변경되었으므로 UI 갱신
+            Refresh();
         }
         else
         {
